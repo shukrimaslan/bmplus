@@ -49,26 +49,9 @@
       <div class="text-4xl text-center">👩‍🏫</div>
       <h2 class="text-xl font-bold text-center text-gray-800 dark:text-white">Akaun Cikgu</h2>
 
-      <!-- Invite code gate -->
-      <div id="inviteGate" class="flex flex-col gap-3">
-        <p class="text-sm text-gray-600 dark:text-slate-300 text-center">
-          Masukkan kod jemputan cikgu untuk meneruskan pendaftaran.
-        </p>
-        <input id="inviteCodeInput" type="text" maxlength="20"
-          placeholder="Kod jemputan..."
-          class="border-2 border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-full text-center font-bold tracking-widest uppercase" />
-        <p id="inviteError" class="text-red-500 text-xs text-center hidden">Kod tidak sah. Hubungi pentadbir.</p>
-        <button onclick="checkInviteCode()"
-          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">
-          Semak Kod
-        </button>
-      </div>
-
-      <!-- Revealed after correct code -->
-      <div id="teacherBenefits" class="hidden flex-col gap-3">
-        <p class="text-gray-600 dark:text-slate-300 text-sm text-center leading-relaxed">
-          Sebagai cikgu, anda boleh:
-        </p>
+      <p class="text-gray-600 dark:text-slate-300 text-sm text-center leading-relaxed">
+        Sebagai cikgu, anda boleh:
+      </p>
       <ul class="space-y-2 text-sm text-gray-700 dark:text-slate-300">
         <li class="flex items-start gap-2"><span class="text-green-600 font-bold mt-0.5">✓</span> Cipta kelas dengan kod join unik</li>
         <li class="flex items-start gap-2"><span class="text-green-600 font-bold mt-0.5">✓</span> Pantau kemajuan setiap pelajar</li>
@@ -82,7 +65,6 @@
         class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">
         Teruskan →
       </button>
-    </div>
 
     <!-- STEP 2: Enter name + school -->
     <div id="step2" class="card w-full bg-white rounded-2xl shadow p-6 border border-gray-100 flex flex-col gap-4 hidden">
@@ -158,32 +140,6 @@
     import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { applyTheme } from "./js/theme.js";
     applyTheme();
-
-    // ── Teacher invite code ───────────────────────────────────────
-    // Change this to your own secret code. Share only with real teachers.
-    // For stronger security, move this to a Firestore doc readable only by admins.
-    const TEACHER_INVITE_CODE = "CIKGU2025";
-
-    window.checkInviteCode = function() {
-      const entered = document.getElementById("inviteCodeInput").value.trim().toUpperCase();
-      const errEl   = document.getElementById("inviteError");
-      if (entered === TEACHER_INVITE_CODE) {
-        document.getElementById("inviteGate").classList.add("hidden");
-        document.getElementById("teacherBenefits").classList.remove("hidden");
-        document.getElementById("teacherBenefits").style.display = "flex";
-        errEl.classList.add("hidden");
-      } else {
-        errEl.classList.remove("hidden");
-        document.getElementById("inviteCodeInput").value = "";
-      }
-    };
-
-    // Also allow pressing Enter in the invite field
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("inviteCodeInput")?.addEventListener("keydown", e => {
-        if (e.key === "Enter") window.checkInviteCode();
-      });
-    });
 
     // Single source of truth for level selection
     let selectedLevel = null;
