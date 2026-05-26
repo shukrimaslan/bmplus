@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Papan Pemuka Cikgu — BM Vocab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    html.dark body { background:#0f172a; color:#f1f5f9; }
+    html.dark .card { background:#1e293b !important; border-color:#334155 !important; }
+    html.dark .tab-bar { background:#1e293b; border-color:#334155; }
+    html.dark .tab-btn { color:#94a3b8; }
+    html.dark .tab-btn.active { color:#16a34a; border-color:#16a34a; }
+    html.dark table thead { background:#334155; }
+    html.dark table tbody tr { border-color:#334155; }
+    html.dark table tbody tr:hover { background:#1e293b; }
+    html.dark .badge { background:#334155; color:#94a3b8; }
+    html.dark .pack-chip { background:#334155; color:#94a3b8; }
+    html.dark .pack-chip.selected { background:#14532d; color:#86efac; border-color:#16a34a; }
+    html.dark .stat-card { background:#1e293b; border-color:#334155; }
+    html.dark input, html.dark select { background:#0f172a; border-color:#475569; color:#f1f5f9; }
+    html.dark .skeleton { background:#334155; }
+    .tab-btn { border-bottom: 2px solid transparent; }
+    .tab-btn.active { border-color:#16a34a; color:#16a34a; font-weight:700; }
+    .pack-chip { cursor:pointer; transition:all .15s; }
+    .pack-chip:hover { opacity:.85; }
+    .pack-chip.selected { background:#dcfce7; color:#14532d; border:2px solid #16a34a; }
+    .skeleton { background:#e2e8f0; border-radius:6px; animation:pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .rank-medal { font-size:1.2rem; }
+    .xp-bar-bg { background:#e5e7eb; border-radius:999px; overflow:hidden; height:6px; }
+    html.dark .xp-bar-bg { background:#334155; }
+    .xp-bar-fill { background:linear-gradient(90deg,#16a34a,#22c55e); height:6px; border-radius:999px; transition:width .6s; }
+    .progress-ring { font-size:.7rem; color:#64748b; }
+    .sortable { cursor:pointer; user-select:none; }
+    .sortable:hover { color:#16a34a; }
+    .sort-arrow { opacity:.4; font-size:.7rem; }
+    .sort-arrow.active { opacity:1; color:#16a34a; }
+    /* Modal */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; display:flex; align-items:center; justify-content:center; }
+    .modal-box { background:#fff; border-radius:1rem; padding:1.5rem; max-width:420px; width:90%; }
+    html.dark .modal-box { background:#1e293b; }
+    .slide-up { animation: slideUp .3s ease; }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:#1e293b; color:#fff; px:1rem; py:.5rem; border-radius:.75rem; font-size:.85rem; z-index:200; padding:.6rem 1.2rem; animation:fadeInOut 2.5s forwards; }
+    @keyframes fadeInOut { 0%{opacity:0;transform:translateX(-50%) translateY(8px)} 15%{opacity:1;transform:translateX(-50%) translateY(0)} 75%{opacity:1} 100%{opacity:0} }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 min-h-screen flex flex-col pb-20">
+
+  <!-- Header -->
+  <div class="bg-white dark:bg-slate-900 shadow-sm sticky top-0 z-40">
+    <div class="px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">👩‍🏫</span>
+        <div>
+          <p class="font-bold text-gray-800 dark:text-white text-base leading-tight" id="teacherNameHeader">Papan Pemuka Cikgu</p>
+          <p class="text-xs text-gray-500 dark:text-slate-400" id="classCodeHeader">Memuatkan...</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openRenameModal()" class="text-gray-500 hover:text-green-600 transition text-xl" title="Nama semula kelas">✏️</button>
+        <a href="profile.html" class="text-gray-500 hover:text-gray-700 text-xl" title="Profil">⚙️</a>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar border-t border-gray-100 dark:border-slate-800 flex px-4 gap-1 overflow-x-auto">
+      <button class="tab-btn active px-4 py-2.5 text-sm whitespace-nowrap" onclick="showTab('overview')" id="tab-overview">📊 Gambaran</button>
+      <button class="tab-btn px-4 py-2.5 text-sm whitespace-nowrap text-gray-500" onclick="showTab('students')" id="tab-students">👥 Pelajar</button>
+      <button class="tab-btn px-4 py-2.5 text-sm whitespace-nowrap text-gray-500" onclick="showTab('packs')" id="tab-packs">📚 Pack</button>
+      <button class="tab-btn px-4 py-2.5 text-sm whitespace-nowrap text-gray-500" onclick="showTab('leaderboard')" id="tab-leaderboard">🏆 Kedudukan</button>
+    </div>
+  </div>
+
+  <!-- No class state -->
+  <div id="noClassState" class="hidden flex-1 flex flex-col items-center justify-center px-4 py-12 gap-5">
+    <div class="text-6xl">🏫</div>
+    <h2 class="text-xl font-bold text-gray-800 dark:text-white text-center">Cipta Kelas Pertama Anda</h2>
+    <p class="text-gray-500 dark:text-slate-400 text-sm text-center max-w-xs">
+      Buat kelas untuk berkongsi kemajuan dengan pelajar anda.
+    </p>
+    <button onclick="openCreateClassModal()"
+      class="bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-3 rounded-xl transition text-base flex items-center gap-2">
+      <span>+</span> Cipta Kelas
+    </button>
+  </div>
+
+  <!-- Main content -->
+  <div id="mainContent" class="hidden flex-1 flex flex-col">
+
+    <!-- ── TAB: OVERVIEW ────────────────────────────────────────────── -->
+    <div id="pane-overview" class="tab-pane px-4 py-4 flex flex-col gap-4">
+
+      <!-- Join code card -->
+      <div class="card bg-white rounded-2xl shadow p-4 border border-gray-100 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-gray-500 dark:text-slate-400 font-semibold uppercase tracking-wider mb-1">Kod Join Kelas</p>
+          <p class="text-3xl font-black text-green-600 tracking-widest font-mono" id="classJoinCode">------</p>
+          <p class="text-xs text-gray-400 mt-1">Kongsikan kod ini dengan pelajar</p>
+        </div>
+        <button onclick="copyJoinCode()" class="bg-green-50 hover:bg-green-100 dark:bg-green-900/30 text-green-700 font-semibold px-4 py-2 rounded-xl text-sm transition">
+          📋 Salin
+        </button>
+      </div>
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-xl p-3 border border-gray-100 dark:border-slate-700 text-center">
+          <p class="text-2xl font-black text-gray-800 dark:text-white" id="statStudents">—</p>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Pelajar</p>
+        </div>
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-xl p-3 border border-gray-100 dark:border-slate-700 text-center">
+          <p class="text-2xl font-black text-green-600" id="statAvgXP">—</p>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Purata XP</p>
+        </div>
+        <div class="stat-card bg-white dark:bg-slate-800 rounded-xl p-3 border border-gray-100 dark:border-slate-700 text-center">
+          <p class="text-2xl font-black text-blue-600" id="statWordsKnown">—</p>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Perkataan</p>
+        </div>
+      </div>
+
+      <!-- Top performers -->
+      <div class="card bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+          <p class="font-bold text-gray-800 dark:text-white text-sm">🌟 Pelajar Terbaik</p>
+          <button class="text-green-600 text-xs font-semibold" onclick="showTab('students')">Lihat semua →</button>
+        </div>
+        <div id="topPerformersList" class="divide-y divide-gray-50 dark:divide-slate-700">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <!-- Pack completion -->
+      <div class="card bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+          <p class="font-bold text-gray-800 dark:text-white text-sm">📚 Kemajuan Pack (Kelas)</p>
+        </div>
+        <div id="packProgressList" class="px-4 py-3 flex flex-col gap-3">
+          <div class="skeleton h-5 w-full"></div>
+          <div class="skeleton h-5 w-3/4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: STUDENTS ─────────────────────────────────────────────── -->
+    <div id="pane-students" class="tab-pane hidden px-4 py-4 flex flex-col gap-4">
+
+      <!-- Search + filter -->
+      <div class="flex gap-2">
+        <input id="studentSearch" type="text" placeholder="🔍 Cari pelajar..."
+          class="flex-1 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+        <select id="studentSort" onchange="renderStudentsTable()"
+          class="border border-gray-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+          <option value="xp">Susun: XP</option>
+          <option value="name">Susun: Nama</option>
+          <option value="words">Susun: Perkataan</option>
+        </select>
+      </div>
+
+      <!-- Students table -->
+      <div class="card bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 dark:bg-slate-800">
+            <tr class="text-gray-500 dark:text-slate-400 text-xs uppercase tracking-wider">
+              <th class="px-4 py-3 text-left">Pelajar</th>
+              <th class="px-4 py-3 text-center sortable" onclick="sortBy('xp')">XP <span class="sort-arrow" id="sort-xp">▼</span></th>
+              <th class="px-4 py-3 text-center sortable hidden sm:table-cell" onclick="sortBy('words')">Patah <span class="sort-arrow" id="sort-words">▼</span></th>
+              <th class="px-4 py-3 text-center"></th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody" class="divide-y divide-gray-50 dark:divide-slate-700">
+            <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">Memuatkan...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="text-xs text-gray-400 text-center">Klik pada pelajar untuk lihat kemajuan terperinci</p>
+    </div>
+
+    <!-- ── TAB: PACKS ────────────────────────────────────────────────── -->
+    <div id="pane-packs" class="tab-pane hidden px-4 py-4 flex flex-col gap-4">
+      <div class="card bg-white rounded-2xl shadow p-4 border border-gray-100">
+        <p class="font-bold text-gray-800 dark:text-white mb-1">📚 Tetapkan Pack untuk Kelas</p>
+        <p class="text-xs text-gray-500 dark:text-slate-400 mb-4">Pack yang dipilih akan ditonjolkan kepada pelajar dalam kelas ini. Pelajar masih boleh belajar pack lain.</p>
+        <div id="packChipsContainer" class="flex flex-wrap gap-2">
+          <!-- filled by JS -->
+        </div>
+        <button onclick="savePacks()" id="savePacksBtn"
+          class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">
+          Simpan Pilihan
+        </button>
+      </div>
+
+      <div class="card bg-white rounded-2xl shadow p-4 border border-gray-100">
+        <p class="font-bold text-gray-800 dark:text-white mb-3">📊 Kemajuan Pack per Pelajar</p>
+        <div id="packDetailTable" class="overflow-x-auto">
+          <p class="text-sm text-gray-400">Memuatkan...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: LEADERBOARD ──────────────────────────────────────────── -->
+    <div id="pane-leaderboard" class="tab-pane hidden px-4 py-4 flex flex-col gap-4">
+      <div class="card bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+          <p class="font-bold text-gray-800 dark:text-white">🏆 Papan Kedudukan Kelas</p>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Semua pelajar disusun mengikut XP</p>
+        </div>
+        <div id="classLeaderboard" class="divide-y divide-gray-50 dark:divide-slate-700">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── STUDENT DETAIL MODAL ──────────────────────────────────────── -->
+  <div id="studentModal" class="modal-overlay hidden" onclick="closeStudentModal(event)">
+    <div class="modal-box w-full max-h-[85vh] overflow-y-auto slide-up" onclick="event.stopPropagation()">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h3 class="font-bold text-lg text-gray-800 dark:text-white" id="modalStudentName">Pelajar</h3>
+          <p class="text-sm text-gray-500 dark:text-slate-400" id="modalStudentMeta"></p>
+        </div>
+        <button onclick="document.getElementById('studentModal').classList.add('hidden')" class="text-gray-400 text-2xl leading-none">×</button>
+      </div>
+      <div id="modalStudentBody" class="flex flex-col gap-3">
+        <!-- filled by JS -->
+      </div>
+      <button onclick="promptRemoveStudent()" class="mt-4 w-full text-red-500 hover:text-red-700 text-sm py-2">🗑️ Keluarkan dari kelas</button>
+    </div>
+  </div>
+
+  <!-- ── RENAME CLASS MODAL ─────────────────────────────────────────── -->
+  <div id="renameModal" class="modal-overlay hidden" onclick="closeRenameModal(event)">
+    <div class="modal-box slide-up" onclick="event.stopPropagation()">
+      <h3 class="font-bold text-lg text-gray-800 dark:text-white mb-4">✏️ Nama Semula Kelas</h3>
+      <input id="renameInput" type="text" maxlength="50" placeholder="Nama kelas baru..."
+        class="w-full border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 mb-4" />
+      <div class="flex gap-3">
+        <button onclick="closeRenameModal()" class="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl text-sm font-semibold">Batal</button>
+        <button onclick="confirmRename()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CREATE CLASS MODAL ─────────────────────────────────────────── -->
+  <div id="createClassModal" class="modal-overlay hidden" onclick="closeCreateModal(event)">
+    <div class="modal-box slide-up" onclick="event.stopPropagation()">
+      <h3 class="font-bold text-lg text-gray-800 dark:text-white mb-2">🏫 Cipta Kelas Baru</h3>
+      <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">Nama kelas (cth: Tahun 4 Amanah, Tingkatan 2B)</p>
+      <input id="createClassInput" type="text" maxlength="50" placeholder="Nama kelas..."
+        class="w-full border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 mb-4" />
+      <p id="createClassError" class="text-red-500 text-sm mb-3 hidden"></p>
+      <div class="flex gap-3">
+        <button onclick="closeCreateModal()" class="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl text-sm font-semibold">Batal</button>
+        <button onclick="confirmCreateClass()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm">Cipta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 flex justify-around py-2 z-50">
+    <a href="home.html" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-green-600 transition text-xs"><span class="text-xl">🏠</span>Home</a>
+    <a href="progress.html" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-green-600 transition text-xs"><span class="text-xl">📊</span>Kemajuan</a>
+    <a href="leaderboard.html" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-green-600 transition text-xs"><span class="text-xl">🏆</span>Ranking</a>
+    <a href="profile.html" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-green-600 transition text-xs"><span class="text-xl">👤</span>Profil</a>
+  </nav>
+
+  <script type="module">
+    import { auth, db } from "./js/firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { doc, getDoc, getDocs, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+      getMyClass, createClass, renameClass, assignPacksToClass,
+      getClassMembers, getStudentProgress, removeMemberFromClass
+    } from "./js/teacher.js";
+    import { applyTheme } from "./js/theme.js";
+    applyTheme();
+
+    // ── State ──────────────────────────────────────────────────────────
+    let classData = null;
+    let members = [];           // [{uid, displayName, xp, ...}]
+    let memberProgress = {};    // {uid: [{wordId, status}]}
+    let allPacks = [];          // from Firestore
+    let selectedPackIds = [];
+    let currentSort = "xp";
+    let currentStudentUid = null;
+
+    // ── Auth ───────────────────────────────────────────────────────────
+    onAuthStateChanged(auth, async (user) => {
+      if (!user || user.isAnonymous) { window.location.href = "index.html"; return; }
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data = snap.data() ?? {};
+      if (data.role !== "teacher") { window.location.href = "home.html"; return; }
+
+      document.getElementById("teacherNameHeader").textContent = data.displayName ?? "Cikgu";
+
+      classData = await getMyClass();
+      if (!classData) {
+        document.getElementById("noClassState").classList.remove("hidden");
+        return;
+      }
+
+      document.getElementById("mainContent").classList.remove("hidden");
+      document.getElementById("classCodeHeader").textContent = `Kelas: ${classData.name} • Kod: ${classData.joinCode}`;
+      document.getElementById("classJoinCode").textContent = classData.joinCode;
+
+      selectedPackIds = classData.packIds ?? [];
+
+      // Load data in parallel
+      const [membersData, packsSnap] = await Promise.all([
+        getClassMembers(classData.classId),
+        getDocs(query(collection(db, "packs"), orderBy("order")))
+      ]);
+
+      members = membersData;
+      allPacks = packsSnap.docs.map(d => ({ packId: d.id, ...d.data() }));
+
+      // Load all member progress in parallel
+      const progressResults = await Promise.all(
+        members.map(m => getStudentProgress(m.uid).then(p => ({ uid: m.uid, progress: p })))
+      );
+      progressResults.forEach(r => { memberProgress[r.uid] = r.progress; });
+
+      renderOverview();
+      renderStudentsTable();
+      renderPackChips();
+      renderPackDetailTable();
+      renderClassLeaderboard();
+      renderStudentsTable(); // re-render now search handler can attach
+    });
+
+    // ── Tab switching ──────────────────────────────────────────────────
+    window.showTab = function(tab) {
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("pane-" + tab).classList.remove("hidden");
+      document.getElementById("tab-" + tab).classList.add("active");
+    };
+
+    // ── Helpers ────────────────────────────────────────────────────────
+    function wordsKnownByMember(uid) {
+      return (memberProgress[uid] ?? []).filter(p => p.status === "known").length;
+    }
+
+    function levelLabel(xp) {
+      const LEVELS = [
+        [0,"Pelajar Baru"],[50,"Pelajar Aktif"],[120,"Pelajar Rajin"],[220,"Pelajar Tekun"],
+        [350,"Cemerlang"],[520,"Bintang Bahasa"],[750,"Juara BM"]
+      ];
+      let title = LEVELS[0][1];
+      for (const [min, t] of LEVELS) { if (xp >= min) title = t; }
+      return title;
+    }
+
+    // ── Overview tab ──────────────────────────────────────────────────
+    function renderOverview() {
+      const total = members.length;
+      const avgXP = total ? Math.round(members.reduce((s, m) => s + (m.xp ?? 0), 0) / total) : 0;
+      const totalWords = Object.values(memberProgress).reduce((s, arr) =>
+        s + arr.filter(p => p.status === "known").length, 0);
+
+      document.getElementById("statStudents").textContent = total;
+      document.getElementById("statAvgXP").textContent = avgXP;
+      document.getElementById("statWordsKnown").textContent = totalWords;
+
+      // Top 3 performers
+      const sorted = [...members].sort((a, b) => (b.xp ?? 0) - (a.xp ?? 0)).slice(0, 3);
+      const medals = ["🥇","🥈","🥉"];
+      const topEl = document.getElementById("topPerformersList");
+      if (!sorted.length) {
+        topEl.innerHTML = `<p class="px-4 py-4 text-sm text-gray-400 text-center">Tiada pelajar lagi</p>`;
+        return;
+      }
+      topEl.innerHTML = sorted.map((m, i) => `
+        <div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700 transition cursor-pointer" onclick="openStudentModal('${m.uid}')">
+          <span class="text-xl w-7 text-center">${medals[i]}</span>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-gray-800 dark:text-white text-sm truncate">${m.displayName}</p>
+            <p class="text-xs text-gray-500">${levelLabel(m.xp ?? 0)}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-green-600 font-bold text-sm">${m.xp ?? 0} XP</p>
+            <p class="text-xs text-gray-400">${wordsKnownByMember(m.uid)} patah</p>
+          </div>
+        </div>
+      `).join("");
+
+      // Pack progress
+      const packEl = document.getElementById("packProgressList");
+      const assignedPacks = selectedPackIds.length
+        ? allPacks.filter(p => selectedPackIds.includes(p.packId))
+        : allPacks.slice(0, 5);
+
+      if (!assignedPacks.length || !members.length) {
+        packEl.innerHTML = `<p class="text-sm text-gray-400">Tiada pack ditetapkan.</p>`;
+        return;
+      }
+
+      packEl.innerHTML = assignedPacks.map(pack => {
+        // Count how many members have all words in this pack known
+        // (approximate: use words known / total words in pack per member)
+        const wordCount = pack.wordCount ?? 30;
+        const wordsInPack = Object.values(memberProgress).map(prog => {
+          // We don't have pack-to-word mapping here, use total as approximation
+          return prog.filter(p => p.status === "known").length;
+        });
+        const avgPct = members.length
+          ? Math.min(100, Math.round(wordsInPack.reduce((s, w) => s + Math.min(w / wordCount * 100, 100), 0) / members.length))
+          : 0;
+        return `
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="font-medium text-gray-700 dark:text-slate-300">${pack.emoji ?? "📦"} ${pack.name}</span>
+              <span class="text-gray-500">${avgPct}%</span>
+            </div>
+            <div class="xp-bar-bg"><div class="xp-bar-fill" style="width:${avgPct}%"></div></div>
+          </div>`;
+      }).join("");
+    }
+
+    // ── Students tab ──────────────────────────────────────────────────
+    window.renderStudentsTable = function() {
+      const search = (document.getElementById("studentSearch")?.value ?? "").toLowerCase();
+      const sort = document.getElementById("studentSort")?.value ?? "xp";
+
+      let filtered = members.filter(m =>
+        m.displayName.toLowerCase().includes(search)
+      );
+
+      filtered.sort((a, b) => {
+        if (sort === "name") return a.displayName.localeCompare(b.displayName);
+        if (sort === "words") return wordsKnownByMember(b.uid) - wordsKnownByMember(a.uid);
+        return (b.xp ?? 0) - (a.xp ?? 0);
+      });
+
+      const tbody = document.getElementById("studentsTableBody");
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-400 text-sm">Tiada pelajar${search ? " ditemui" : ""}</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = filtered.map(m => {
+        const words = wordsKnownByMember(m.uid);
+        const lvl = `${m.schoolLevel === "secondary" ? "T" : "T"}${m.schoolYearNum ?? "?"}`;
+        return `
+          <tr class="hover:bg-gray-50 dark:hover:bg-slate-700 transition cursor-pointer" onclick="openStudentModal('${m.uid}')">
+            <td class="px-4 py-3">
+              <p class="font-semibold text-gray-800 dark:text-white text-sm">${m.displayName}</p>
+              <p class="text-xs text-gray-400">${m.schoolLevel === "primary" ? "🏫" : "🎓"} Tahun/T ${m.schoolYearNum ?? "?"}</p>
+            </td>
+            <td class="px-4 py-3 text-center">
+              <span class="text-green-600 font-bold">${m.xp ?? 0}</span>
+            </td>
+            <td class="px-4 py-3 text-center hidden sm:table-cell text-gray-600 dark:text-slate-300">${words}</td>
+            <td class="px-4 py-3 text-center text-gray-400 text-lg">›</td>
+          </tr>`;
+      }).join("");
+    };
+
+    // attach search listener (after DOM ready)
+    setTimeout(() => {
+      document.getElementById("studentSearch")?.addEventListener("input", renderStudentsTable);
+    }, 100);
+
+    window.sortBy = function(col) {
+      document.getElementById("studentSort").value = col;
+      renderStudentsTable();
+      document.querySelectorAll(".sort-arrow").forEach(el => el.classList.remove("active"));
+      document.getElementById("sort-" + col)?.classList.add("active");
+    };
+
+    // ── Student detail modal ──────────────────────────────────────────
+    window.openStudentModal = function(uid) {
+      const member = members.find(m => m.uid === uid);
+      if (!member) return;
+      currentStudentUid = uid;
+
+      document.getElementById("modalStudentName").textContent = member.displayName;
+      document.getElementById("modalStudentMeta").textContent =
+        `${member.schoolLevel === "primary" ? "🏫 Sekolah Rendah" : "🎓 Sekolah Menengah"} • ${member.xp ?? 0} XP • ${wordsKnownByMember(uid)} patah diketahui`;
+
+      const progress = memberProgress[uid] ?? [];
+      const known = progress.filter(p => p.status === "known").length;
+      const total = 480;
+      const pct = Math.round(known / total * 100);
+
+      // Pack-level breakdown (approximate — group by counts per 30)
+      const assignedPacks = selectedPackIds.length
+        ? allPacks.filter(p => selectedPackIds.includes(p.packId))
+        : allPacks;
+
+      document.getElementById("modalStudentBody").innerHTML = `
+        <div class="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 flex flex-col gap-3">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 dark:text-slate-300 font-semibold">Jumlah Kemajuan</span>
+            <span class="font-bold text-green-600">${known} / ${total} patah</span>
+          </div>
+          <div class="xp-bar-bg"><div class="xp-bar-fill" style="width:${pct}%"></div></div>
+          <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400">
+            <div>📈 Level: <strong class="text-gray-700 dark:text-slate-200">${levelLabel(member.xp ?? 0)}</strong></div>
+            <div>🔥 XP: <strong class="text-green-600">${member.xp ?? 0}</strong></div>
+          </div>
+        </div>
+        ${assignedPacks.slice(0, 8).map(pack => {
+          const packPct = Math.min(100, Math.round(known / (pack.wordCount ?? 30) * (100 / (assignedPacks.length || 1))));
+          return `
+            <div class="flex items-center gap-3">
+              <span class="text-lg w-7 text-center">${pack.emoji ?? "📦"}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-medium text-gray-700 dark:text-slate-300 truncate">${pack.name}</p>
+                <div class="xp-bar-bg mt-1"><div class="xp-bar-fill" style="width:${packPct}%"></div></div>
+              </div>
+              <span class="text-xs text-gray-400 w-8 text-right">${packPct}%</span>
+            </div>`;
+        }).join("")}
+      `;
+
+      document.getElementById("studentModal").classList.remove("hidden");
+    };
+
+    window.closeStudentModal = function(e) {
+      if (!e || e.target.id === "studentModal") {
+        document.getElementById("studentModal").classList.add("hidden");
+        currentStudentUid = null;
+      }
+    };
+
+    window.promptRemoveStudent = async function() {
+      if (!currentStudentUid || !classData) return;
+      const member = members.find(m => m.uid === currentStudentUid);
+      if (!confirm(`Keluarkan ${member?.displayName} dari kelas?`)) return;
+      await removeMemberFromClass(classData.classId, currentStudentUid);
+      members = members.filter(m => m.uid !== currentStudentUid);
+      renderStudentsTable();
+      renderOverview();
+      renderClassLeaderboard();
+      document.getElementById("studentModal").classList.add("hidden");
+      showToast("Pelajar dikeluarkan.");
+    };
+
+    // ── Packs tab ─────────────────────────────────────────────────────
+    function renderPackChips() {
+      const container = document.getElementById("packChipsContainer");
+      container.innerHTML = allPacks.map(p => `
+        <button data-packid="${p.packId}"
+          class="pack-chip border-2 rounded-xl px-3 py-2 text-sm font-semibold ${selectedPackIds.includes(p.packId) ? "selected" : "border-gray-200 text-gray-600 dark:text-slate-300"}"
+          onclick="togglePack('${p.packId}')">
+          ${p.emoji ?? "📦"} ${p.name}
+        </button>
+      `).join("");
+    }
+
+    window.togglePack = function(packId) {
+      if (selectedPackIds.includes(packId)) {
+        selectedPackIds = selectedPackIds.filter(id => id !== packId);
+      } else {
+        selectedPackIds.push(packId);
+      }
+      const btn = document.querySelector(`[data-packid="${packId}"]`);
+      btn.classList.toggle("selected", selectedPackIds.includes(packId));
+      btn.classList.toggle("border-gray-200", !selectedPackIds.includes(packId));
+    };
+
+    window.savePacks = async function() {
+      if (!classData) return;
+      const btn = document.getElementById("savePacksBtn");
+      btn.textContent = "Menyimpan...";
+      btn.disabled = true;
+      await assignPacksToClass(classData.classId, selectedPackIds);
+      classData.packIds = selectedPackIds;
+      btn.textContent = "✓ Disimpan!";
+      setTimeout(() => { btn.textContent = "Simpan Pilihan"; btn.disabled = false; }, 2000);
+      renderOverview();
+      renderPackDetailTable();
+    };
+
+    function renderPackDetailTable() {
+      const el = document.getElementById("packDetailTable");
+      if (!members.length) {
+        el.innerHTML = `<p class="text-sm text-gray-400">Tiada pelajar.</p>`;
+        return;
+      }
+      const packs = selectedPackIds.length
+        ? allPacks.filter(p => selectedPackIds.includes(p.packId))
+        : allPacks.slice(0, 6);
+
+      el.innerHTML = `
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="text-gray-500 border-b border-gray-100 dark:border-slate-700">
+              <th class="py-2 text-left pr-2">Pelajar</th>
+              ${packs.map(p => `<th class="py-2 text-center px-1" title="${p.name}">${p.emoji ?? "📦"}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${[...members].sort((a,b) => (b.xp??0)-(a.xp??0)).map(m => `
+              <tr class="border-b border-gray-50 dark:border-slate-700">
+                <td class="py-2 pr-2 font-semibold text-gray-700 dark:text-slate-300 max-w-[100px] truncate">${m.displayName}</td>
+                ${packs.map(p => {
+                  const known = wordsKnownByMember(m.uid);
+                  const pct = Math.min(100, Math.round(known / (p.wordCount ?? 30) * (100 / (packs.length || 1))));
+                  const color = pct >= 80 ? "text-green-600" : pct >= 40 ? "text-yellow-600" : "text-gray-400";
+                  return `<td class="py-2 text-center px-1 ${color} font-semibold">${pct}%</td>`;
+                }).join("")}
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // ── Leaderboard tab ───────────────────────────────────────────────
+    function renderClassLeaderboard() {
+      const sorted = [...members].sort((a, b) => (b.xp ?? 0) - (a.xp ?? 0));
+      const medals = ["🥇","🥈","🥉"];
+      const el = document.getElementById("classLeaderboard");
+      if (!sorted.length) {
+        el.innerHTML = `<p class="px-4 py-6 text-center text-sm text-gray-400">Tiada pelajar dalam kelas.</p>`;
+        return;
+      }
+      el.innerHTML = sorted.map((m, i) => {
+        const isTop3 = i < 3;
+        return `
+          <div class="flex items-center gap-3 px-4 py-3 ${isTop3 ? "bg-green-50/50 dark:bg-green-900/10" : ""} hover:bg-gray-50 dark:hover:bg-slate-700 transition">
+            <span class="text-xl w-8 text-center font-black ${isTop3 ? "" : "text-gray-400 text-base"}">${isTop3 ? medals[i] : i + 1}</span>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-gray-800 dark:text-white text-sm truncate">${m.displayName}</p>
+              <div class="flex items-center gap-2 mt-0.5">
+                <div class="xp-bar-bg flex-1" style="max-width:120px">
+                  <div class="xp-bar-fill" style="width:${Math.min(100, Math.round((m.xp ?? 0) / 500 * 100))}%"></div>
+                </div>
+                <span class="text-xs text-gray-400">${wordsKnownByMember(m.uid)} patah</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-green-600 font-black">${m.xp ?? 0}</p>
+              <p class="text-xs text-gray-400">XP</p>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    // ── Rename modal ──────────────────────────────────────────────────
+    window.openRenameModal = function() {
+      if (!classData) return;
+      document.getElementById("renameInput").value = classData.name;
+      document.getElementById("renameModal").classList.remove("hidden");
+    };
+    window.closeRenameModal = function(e) {
+      if (!e || e.target.id === "renameModal") {
+        document.getElementById("renameModal").classList.add("hidden");
+      }
+    };
+    window.confirmRename = async function() {
+      const name = document.getElementById("renameInput").value.trim();
+      if (!name) return;
+      await renameClass(classData.classId, name);
+      classData.name = name;
+      document.getElementById("classCodeHeader").textContent = `Kelas: ${name} • Kod: ${classData.joinCode}`;
+      document.getElementById("renameModal").classList.add("hidden");
+      showToast("Nama kelas dikemas kini.");
+    };
+
+    // ── Create class modal ────────────────────────────────────────────
+    window.openCreateClassModal = function() {
+      document.getElementById("createClassModal").classList.remove("hidden");
+    };
+    window.closeCreateModal = function(e) {
+      if (!e || e.target.id === "createClassModal") {
+        document.getElementById("createClassModal").classList.add("hidden");
+      }
+    };
+    window.confirmCreateClass = async function() {
+      const name = document.getElementById("createClassInput").value.trim();
+      const err = document.getElementById("createClassError");
+      err.classList.add("hidden");
+      if (!name) { err.textContent = "Sila masukkan nama kelas."; err.classList.remove("hidden"); return; }
+      try {
+        const { classId, joinCode } = await createClass(name);
+        window.location.reload();
+      } catch (e) {
+        err.textContent = e.message;
+        err.classList.remove("hidden");
+      }
+    };
+
+    // ── Copy join code ────────────────────────────────────────────────
+    window.copyJoinCode = function() {
+      if (!classData) return;
+      navigator.clipboard.writeText(classData.joinCode).catch(() => {});
+      showToast(`Kod ${classData.joinCode} disalin!`);
+    };
+
+    // ── Toast ─────────────────────────────────────────────────────────
+    window.showToast = function(msg) {
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2600);
+    };
+  </script>
+</body>
+</html>

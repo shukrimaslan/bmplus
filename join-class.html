@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sertai Kelas — BM Vocab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    html.dark body { background:#0f172a; color:#f1f5f9; }
+    html.dark .card { background:#1e293b; border-color:#334155; }
+    html.dark input { background:#0f172a; border-color:#475569; color:#f1f5f9; }
+    html.dark input::placeholder { color:#64748b; }
+    .code-input {
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+    }
+    .success-pop { animation: popIn .4s cubic-bezier(.175,.885,.32,1.275); }
+    @keyframes popIn { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 min-h-screen flex flex-col">
+
+  <div class="bg-white dark:bg-slate-900 shadow-sm px-4 py-3 flex items-center gap-3">
+    <a href="profile.html" class="text-gray-500 hover:text-gray-700 text-xl">←</a>
+    <span class="font-bold text-gray-800 dark:text-white text-lg">Sertai Kelas</span>
+  </div>
+
+  <div class="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-md mx-auto w-full gap-5">
+
+    <!-- Already in a class state (shown if classId exists) -->
+    <div id="inClassView" class="hidden w-full">
+      <div class="card bg-white dark:bg-slate-800 rounded-2xl shadow p-6 border border-gray-100 dark:border-slate-700 flex flex-col items-center gap-4">
+        <div class="text-5xl">🏫</div>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white text-center" id="classNameDisplay">...</h2>
+        <p class="text-sm text-gray-500 dark:text-slate-400 text-center">Cikgu: <span id="teacherNameDisplay" class="font-semibold text-gray-700 dark:text-slate-300">...</span></p>
+        <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl px-6 py-3 text-green-800 dark:text-green-300 text-sm font-semibold">
+          ✓ Anda sudah dalam kelas ini
+        </div>
+        <button id="leaveBtn"
+          class="text-red-500 hover:text-red-700 text-sm underline mt-2">
+          Keluar dari kelas ini
+        </button>
+      </div>
+    </div>
+
+    <!-- Join form state -->
+    <div id="joinView" class="w-full flex flex-col gap-5">
+      <div class="text-center">
+        <div class="text-5xl mb-3">🔑</div>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white">Masukkan Kod Kelas</h2>
+        <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">Dapatkan kod 6 huruf daripada cikgu anda</p>
+      </div>
+
+      <div class="card bg-white dark:bg-slate-800 rounded-2xl shadow p-6 border border-gray-100 dark:border-slate-700 flex flex-col gap-4">
+        <input id="codeInput" type="text" maxlength="6" placeholder="ABC123"
+          class="code-input border-2 border-gray-200 dark:border-slate-600 rounded-xl px-4 py-4 w-full
+                 focus:outline-none focus:border-green-500 transition" />
+        <p id="codeError" class="text-red-500 text-sm text-center hidden"></p>
+        <button id="joinBtn" onclick="handleJoin()"
+          class="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+          <span id="joinLabel">Sertai Kelas</span>
+          <span id="joinSpinner" class="hidden animate-spin">⟳</span>
+        </button>
+      </div>
+
+      <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300 flex gap-3">
+        <span class="text-xl flex-shrink-0">💡</span>
+        <span>Minta kod kelas daripada cikgu BM anda. Kod ini terdiri daripada 6 huruf/nombor seperti <strong>A1B2C3</strong>.</span>
+      </div>
+    </div>
+
+    <!-- Success state (shown briefly before redirect) -->
+    <div id="successView" class="hidden w-full">
+      <div class="card bg-white dark:bg-slate-800 rounded-2xl shadow p-8 border border-gray-100 dark:border-slate-700 flex flex-col items-center gap-4 success-pop">
+        <div class="text-6xl">🎊</div>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white text-center">Berjaya Menyertai!</h2>
+        <p class="text-gray-600 dark:text-slate-400 text-sm text-center" id="successMsg"></p>
+        <div class="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+          <div id="redirectBar" class="bg-green-500 h-2 rounded-full transition-all duration-[3000ms]" style="width:0%"></div>
+        </div>
+        <p class="text-xs text-gray-400">Menghala semula...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 flex justify-around py-2 z-50">
+    <a href="home.html" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-green-600 transition text-xs"><span class="text-xl">🏠</span>Home</a>
+    <a href="progress.html" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-green-600 transition text-xs"><span class="text-xl">📊</span>Kemajuan</a>
+    <a href="leaderboard.html" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-green-600 transition text-xs"><span class="text-xl">🏆</span>Ranking</a>
+    <a href="profile.html" class="flex flex-col items-center gap-0.5 text-green-600 transition text-xs"><span class="text-xl">👤</span>Profil</a>
+  </nav>
+  <div class="h-16"></div>
+
+  <script type="module">
+    import { auth, db } from "./js/firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { joinClass, leaveClass } from "./js/teacher.js";
+    import { applyTheme } from "./js/theme.js";
+    applyTheme();
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user || user.isAnonymous) { window.location.href = "index.html"; return; }
+      currentUser = user;
+
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data = snap.data() ?? {};
+
+      if (data.role === "teacher") {
+        window.location.href = "teacher-dashboard.html"; return;
+      }
+
+      if (data.classId) {
+        // Already in a class — show class info
+        const classSnap = await getDoc(doc(db, "classes", data.classId));
+        if (classSnap.exists()) {
+          const cls = classSnap.data();
+          document.getElementById("classNameDisplay").textContent = cls.name;
+          document.getElementById("teacherNameDisplay").textContent = cls.teacherName;
+          document.getElementById("inClassView").classList.remove("hidden");
+          document.getElementById("joinView").classList.add("hidden");
+
+          document.getElementById("leaveBtn").addEventListener("click", async () => {
+            if (!confirm("Anda pasti mahu keluar dari kelas ini?")) return;
+            await leaveClass(data.classId);
+            window.location.reload();
+          });
+        }
+      }
+    });
+
+    // Auto-uppercase input
+    document.getElementById("codeInput").addEventListener("input", function() {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    });
+
+    window.handleJoin = async function() {
+      const code = document.getElementById("codeInput").value.trim();
+      const err = document.getElementById("codeError");
+      err.classList.add("hidden");
+
+      if (code.length !== 6) {
+        err.textContent = "Kod mestilah 6 aksara.";
+        err.classList.remove("hidden");
+        return;
+      }
+
+      const label = document.getElementById("joinLabel");
+      const spinner = document.getElementById("joinSpinner");
+      const btn = document.getElementById("joinBtn");
+      label.textContent = "Menyertai...";
+      spinner.classList.remove("hidden");
+      btn.disabled = true;
+
+      try {
+        await joinClass(code);
+
+        // Show success
+        document.getElementById("joinView").classList.add("hidden");
+        document.getElementById("successView").classList.remove("hidden");
+        document.getElementById("successMsg").textContent = `Anda telah menyertai kelas dengan kod ${code}.`;
+
+        // Animate progress bar then redirect
+        requestAnimationFrame(() => {
+          document.getElementById("redirectBar").style.width = "100%";
+        });
+        setTimeout(() => { window.location.href = "home.html"; }, 3000);
+
+      } catch (e) {
+        err.textContent = e.message;
+        err.classList.remove("hidden");
+        label.textContent = "Sertai Kelas";
+        spinner.classList.add("hidden");
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

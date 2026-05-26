@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daftar Sebagai Cikgu — BM Vocab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --green: #16a34a;
+      --green-light: #dcfce7;
+      --green-dark: #14532d;
+    }
+    html.dark body { background:#0f172a; color:#f1f5f9; }
+    html.dark .card { background:#1e293b; border-color:#334155; }
+    html.dark .step-circle { background:#334155; color:#94a3b8; }
+    html.dark .step-circle.done { background:var(--green); color:#fff; }
+    html.dark .step-circle.active { background:var(--green); color:#fff; }
+    html.dark input { background:#0f172a; border-color:#475569; color:#f1f5f9; }
+    html.dark input::placeholder { color:#64748b; }
+    html.dark .info-box { background:#1e3a5f; border-color:#2563eb; color:#bfdbfe; }
+    .step-line { flex:1; height:2px; background:#e2e8f0; }
+    html.dark .step-line { background:#334155; }
+    .step-line.done { background:var(--green); }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <div class="bg-white dark:bg-slate-900 shadow-sm px-4 py-3 flex items-center gap-3">
+    <a href="profile.html" class="text-gray-500 hover:text-gray-700 text-xl">←</a>
+    <span class="font-bold text-gray-800 dark:text-white text-lg">Daftar Sebagai Cikgu</span>
+  </div>
+
+  <div class="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-md mx-auto w-full gap-6">
+
+    <!-- Step indicator -->
+    <div class="flex items-center w-full gap-2" id="stepIndicator">
+      <div class="step-circle w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold active" data-step="1">1</div>
+      <div class="step-line" id="line1"></div>
+      <div class="step-circle w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-gray-200 text-gray-500" data-step="2">2</div>
+      <div class="step-line" id="line2"></div>
+      <div class="step-circle w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-gray-200 text-gray-500" data-step="3">3</div>
+    </div>
+
+    <!-- STEP 1: Why become a teacher -->
+    <div id="step1" class="card w-full bg-white rounded-2xl shadow p-6 border border-gray-100 flex flex-col gap-4">
+      <div class="text-4xl text-center">👩‍🏫</div>
+      <h2 class="text-xl font-bold text-center text-gray-800 dark:text-white">Akaun Cikgu</h2>
+      <p class="text-gray-600 dark:text-slate-300 text-sm text-center leading-relaxed">
+        Sebagai cikgu, anda boleh:
+      </p>
+      <ul class="space-y-2 text-sm text-gray-700 dark:text-slate-300">
+        <li class="flex items-start gap-2"><span class="text-green-600 font-bold mt-0.5">✓</span> Cipta kelas dengan kod join unik</li>
+        <li class="flex items-start gap-2"><span class="text-green-600 font-bold mt-0.5">✓</span> Pantau kemajuan setiap pelajar</li>
+        <li class="flex items-start gap-2"><span class="text-green-600 font-bold mt-0.5">✓</span> Tetapkan pack perkataan untuk kelas</li>
+        <li class="flex items-start gap-2"><span class="text-green-600 font-bold mt-0.5">✓</span> Lihat papan kedudukan kelas</li>
+      </ul>
+      <div class="info-box bg-blue-50 border border-blue-200 rounded-xl p-3 text-blue-800 text-xs">
+        ⚠️ Akaun cikgu tidak boleh ditukar semula ke pelajar. Pastikan anda adalah cikgu sebenar.
+      </div>
+      <button onclick="goToStep(2)"
+        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">
+        Teruskan →
+      </button>
+    </div>
+
+    <!-- STEP 2: Enter name + school -->
+    <div id="step2" class="card w-full bg-white rounded-2xl shadow p-6 border border-gray-100 flex flex-col gap-4 hidden">
+      <div class="text-4xl text-center">🏫</div>
+      <h2 class="text-xl font-bold text-center text-gray-800 dark:text-white">Maklumat Sekolah</h2>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-semibold text-gray-700 dark:text-slate-300">Nama Cikgu</label>
+        <input id="teacherName" type="text" placeholder="Cikgu Aminah" maxlength="40"
+          class="border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-full" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-semibold text-gray-700 dark:text-slate-300">Nama Sekolah (pilihan)</label>
+        <input id="schoolName" type="text" placeholder="SK / SMK ..." maxlength="60"
+          class="border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-full" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-semibold text-gray-700 dark:text-slate-300">Peringkat Kelas</label>
+        <div class="flex gap-3">
+          <button data-level="primary" onclick="selectLevel('primary')"
+            class="level-btn flex-1 border-2 border-gray-200 rounded-xl py-3 text-center text-sm font-semibold transition">
+            🏫 Sekolah Rendah
+          </button>
+          <button data-level="secondary" onclick="selectLevel('secondary')"
+            class="level-btn flex-1 border-2 border-gray-200 rounded-xl py-3 text-center text-sm font-semibold transition">
+            🎓 Sekolah Menengah
+          </button>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="goToStep(1)"
+          class="flex-1 border border-gray-300 text-gray-600 dark:text-slate-300 font-semibold py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition text-sm">
+          ← Kembali
+        </button>
+        <button onclick="goToStep(3)"
+          class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">
+          Teruskan →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Confirm -->
+    <div id="step3" class="card w-full bg-white rounded-2xl shadow p-6 border border-gray-100 flex flex-col gap-4 hidden">
+      <div class="text-4xl text-center">🎉</div>
+      <h2 class="text-xl font-bold text-center text-gray-800 dark:text-white">Pengesahan</h2>
+      <div id="confirmBox" class="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 text-sm space-y-2 text-gray-700 dark:text-slate-300">
+        <!-- filled by JS -->
+      </div>
+      <p class="text-xs text-gray-500 dark:text-slate-400 text-center">
+        Selepas ini, anda akan dibawa ke papan pemuka cikgu untuk mencipta kelas pertama anda.
+      </p>
+      <div class="flex gap-3">
+        <button onclick="goToStep(2)"
+          class="flex-1 border border-gray-300 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-50 transition text-sm">
+          ← Kembali
+        </button>
+        <button id="confirmBtn" onclick="confirmTeacher()"
+          class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+          <span id="confirmLabel">Sahkan</span>
+          <span id="confirmSpinner" class="hidden animate-spin">⟳</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { auth, db } from "./js/firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { applyTheme } from "./js/theme.js";
+    applyTheme();
+
+    let selectedLevel = null;
+    window.selectedLevel = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user || user.isAnonymous) {
+        window.location.href = "index.html";
+        return;
+      }
+      // Pre-fill name
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data = snap.data() ?? {};
+      if (data.role === "teacher") {
+        // Already a teacher
+        window.location.href = "teacher-dashboard.html";
+        return;
+      }
+      const nameInput = document.getElementById("teacherName");
+      if (nameInput && user.displayName) nameInput.value = user.displayName;
+    });
+
+    window.goToStep = function(step) {
+      if (step === 3) {
+        const name = document.getElementById("teacherName").value.trim();
+        if (!name) { alert("Sila masukkan nama cikgu."); return; }
+        if (!selectedLevel) { alert("Sila pilih peringkat kelas."); return; }
+        // Fill confirm box
+        const school = document.getElementById("schoolName").value.trim();
+        document.getElementById("confirmBox").innerHTML = `
+          <div class="flex justify-between"><span class="font-semibold">Nama:</span><span>${name}</span></div>
+          ${school ? `<div class="flex justify-between"><span class="font-semibold">Sekolah:</span><span>${school}</span></div>` : ""}
+          <div class="flex justify-between"><span class="font-semibold">Peringkat:</span><span>${selectedLevel === "primary" ? "🏫 Rendah" : "🎓 Menengah"}</span></div>
+        `;
+      }
+      [1,2,3].forEach(s => {
+        document.getElementById("step" + s).classList.toggle("hidden", s !== step);
+      });
+      // Update step circles
+      document.querySelectorAll(".step-circle").forEach(el => {
+        const n = parseInt(el.dataset.step);
+        el.classList.remove("active", "done", "bg-green-600", "text-white", "bg-gray-200", "text-gray-500");
+        if (n < step) {
+          el.classList.add("done", "bg-green-600", "text-white");
+          el.textContent = "✓";
+        } else if (n === step) {
+          el.classList.add("active", "bg-green-600", "text-white");
+          el.textContent = n;
+        } else {
+          el.classList.add("bg-gray-200", "text-gray-500");
+          el.textContent = n;
+        }
+      });
+      document.getElementById("line1").classList.toggle("done", step > 1);
+      document.getElementById("line2").classList.toggle("done", step > 2);
+    };
+
+    window.selectLevel = function(level) {
+      selectedLevel = level;
+      window.selectedLevel = level;
+      document.querySelectorAll(".level-btn").forEach(btn => {
+        btn.classList.remove("border-green-600", "bg-green-50", "text-green-700");
+        btn.classList.add("border-gray-200");
+      });
+      const btn = document.querySelector(`[data-level="${level}"]`);
+      btn.classList.remove("border-gray-200");
+      btn.classList.add("border-green-600", "bg-green-50", "text-green-700");
+    };
+
+    window.confirmTeacher = async function() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const label = document.getElementById("confirmLabel");
+      const spinner = document.getElementById("confirmSpinner");
+      const btn = document.getElementById("confirmBtn");
+      label.textContent = "Menyimpan...";
+      spinner.classList.remove("hidden");
+      btn.disabled = true;
+
+      try {
+        const name = document.getElementById("teacherName").value.trim();
+        const school = document.getElementById("schoolName").value.trim();
+        await updateDoc(doc(db, "users", user.uid), {
+          role: "teacher",
+          displayName: name,
+          schoolName: school || null,
+          schoolLevel: selectedLevel,
+        });
+        window.location.href = "teacher-dashboard.html";
+      } catch (e) {
+        alert("Ralat: " + e.message);
+        label.textContent = "Sahkan";
+        spinner.classList.add("hidden");
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

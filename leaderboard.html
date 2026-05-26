@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#6366f1"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <title>BM Vocab - Ranking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    body { font-family:'Nunito',sans-serif; padding-bottom:80px; }
+
+    /* ── Dark mode ── */
+    html.dark body           { background:#0f172a; color:#e2e8f0; }
+    html.dark .bg-white      { background:#1e293b !important; }
+    html.dark .bg-gray-50    { background:#0f172a !important; }
+    html.dark nav.bg-white   { background:#1e293b !important; }
+    html.dark .bottom-nav    { background:#1e293b !important; border-top-color:#334155 !important; }
+    html.dark .text-gray-800 { color:#f1f5f9 !important; }
+    html.dark .text-gray-700 { color:#e2e8f0 !important; }
+    html.dark .text-gray-600 { color:#cbd5e1 !important; }
+    html.dark .text-gray-500 { color:#94a3b8 !important; }
+    html.dark .text-gray-400 { color:#64748b !important; }
+    html.dark .bg-indigo-50  { background:#1e1b4b !important; }
+    html.dark .text-indigo-600 { color:#a5b4fc !important; }
+    html.dark .text-indigo-500 { color:#818cf8 !important; }
+    html.dark .bg-indigo-100 { background:#312e81 !important; }
+    html.dark .text-indigo-600.bg-indigo-100 { color:#e0e7ff !important; }
+
+    /* Rank cards: keep their gradient backgrounds but ensure text is always legible.
+       In dark mode we darken them slightly and force text dark (they're light gradients). */
+    .rank-1     { background:linear-gradient(135deg,#fef9c3,#fde68a); border-color:#fcd34d; }
+    .rank-2     { background:linear-gradient(135deg,#f1f5f9,#e2e8f0); border-color:#cbd5e1; }
+    .rank-3     { background:linear-gradient(135deg,#ffedd5,#fed7aa); border-color:#fdba74; }
+    .rank-other { background:white; border-color:#f3f4f6; }
+    .rank-me    { border-color:#6366f1 !important; box-shadow:0 0 0 3px #c7d2fe; }
+
+    /* In dark mode, darken rank card backgrounds so the forced dark text stays readable */
+    html.dark .rank-1     { filter:brightness(.75); }
+    html.dark .rank-2     { filter:brightness(.55); }
+    html.dark .rank-3     { filter:brightness(.7); }
+    html.dark .rank-other { background:#1e293b !important; border-color:#334155 !important; filter:none; }
+    html.dark .rank-me    { border-color:#6366f1 !important; filter:none; }
+
+    /* rank-card text colours are now handled via inline styles in renderList()
+       to guarantee correct colours in both light and dark mode regardless of
+       CSS specificity conflicts. */
+
+    .avatar-sm  { width:42px;height:42px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;flex-shrink:0; }
+    .bar-track  { height:6px;background:#f3f4f6;border-radius:99px;overflow:hidden;flex:1; }
+    html.dark .bar-track { background:#334155; }
+    .bar-fill   { height:100%;border-radius:99px;background:linear-gradient(90deg,#6366f1,#818cf8); }
+
+    /* Tab bar */
+    .tab-btn { flex:1;padding:.625rem;font-weight:800;font-size:.875rem;border-radius:.875rem;transition:background .2s,color .2s;color:#6b7280;cursor:pointer; }
+    .tab-btn.active { background:#6366f1;color:white; }
+    html.dark .tab-btn { color:#94a3b8; }
+    html.dark .tab-btn.active { color:white; }
+
+    /* Skeleton */
+    .skeleton { border-radius:1rem;height:4.5rem; }
+    html.dark .skeleton { background:#334155 !important; }
+
+    /* Friends list button */
+    .friends-list-btn { display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.875rem;background:#eef2ff;color:#4338ca;font-weight:800;border-radius:1.25rem;transition:background .2s;border:2px solid #c7d2fe;font-size:.9rem; }
+    .friends-list-btn:hover { background:#e0e7ff; }
+    html.dark .friends-list-btn { background:#1e1b4b !important;color:#a5b4fc !important;border-color:#3730a3 !important; }
+
+    @keyframes fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation:fade-up .4s ease both; }
+
+    .bottom-nav { position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #f3f4f6;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:50; }
+    .nav-item { display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;font-size:11px;font-weight:800;color:#9ca3af;text-decoration:none;transition:color .2s; }
+    .nav-item.active { color:#6366f1; }
+    .nav-icon { font-size:22px;line-height:1; }
+  </style>
+  <script>(function(){const t=localStorage.getItem('bmvocab_theme');if(t==='dark')document.documentElement.classList.add('dark');})();</script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <nav class="bg-white shadow-sm sticky top-0 z-10">
+    <div class="max-w-lg mx-auto px-5 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2"><span class="text-2xl">🇲🇾</span><h1 class="text-xl font-black text-green-700">BM Vocab</h1></div>
+      <h2 class="font-black text-gray-700">🏆 Ranking</h2>
+      <div class="w-10"></div>
+    </div>
+  </nav>
+
+  <div class="max-w-lg mx-auto px-5 py-6">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl p-5 mb-5 text-white fade-up shadow-md">
+      <p class="text-indigo-200 text-xs font-bold uppercase tracking-widest mb-1">Leaderboard</p>
+      <h2 class="text-2xl font-black mb-1">Top Learners</h2>
+      <p class="text-indigo-200 text-sm">Earn XP by studying and quizzing. Keep your streak going!</p>
+    </div>
+
+    <!-- Tabs: Global / Friends -->
+    <div class="flex bg-white rounded-2xl p-1 shadow-sm mb-5 gap-1 fade-up" style="animation-delay:.05s">
+      <button class="tab-btn active" id="tabGlobal"  onclick="setTab('global')">🌍 Global</button>
+      <button class="tab-btn"        id="tabFriends" onclick="setTab('friends')">👫 Friends</button>
+    </div>
+
+    <!-- Your rank -->
+    <div id="myRankCard" class="hidden bg-indigo-50 border-2 border-indigo-200 rounded-2xl px-5 py-4 mb-5 fade-up" style="animation-delay:.08s">
+      <p class="text-indigo-400 text-xs font-bold uppercase mb-1">Your Rank</p>
+      <div class="flex items-center gap-3">
+        <span class="text-2xl font-black text-indigo-600" id="myRank">#—</span>
+        <div class="flex-1">
+          <p class="font-black text-gray-800" id="myName">—</p>
+          <p class="text-xs text-indigo-500 font-semibold" id="myXPLabel">0 XP</p>
+        </div>
+        <span class="text-xs font-black bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full" id="myLevelLabel">—</span>
+      </div>
+    </div>
+
+    <!-- Skeletons -->
+    <div id="loadingState" class="space-y-3">
+      <div class="skeleton bg-gray-200 animate-pulse"></div>
+      <div class="skeleton bg-gray-200 animate-pulse"></div>
+      <div class="skeleton bg-gray-200 animate-pulse"></div>
+      <div class="skeleton bg-gray-200 animate-pulse"></div>
+      <div class="skeleton bg-gray-200 animate-pulse"></div>
+    </div>
+
+    <!-- Guest notice -->
+    <div id="guestNotice" class="hidden text-center py-10 fade-up">
+      <div class="text-5xl mb-3">👤</div>
+      <h3 class="font-black text-gray-600 mb-2">Sign in to see rankings</h3>
+      <p class="text-gray-400 text-sm mb-4">Your score won't appear until you're signed in.</p>
+      <button onclick="showModal()" class="inline-block bg-indigo-500 text-white font-black py-3 px-6 rounded-2xl">🔐 Sign In</button>
+    </div>
+
+    <!-- Leaderboard list -->
+    <div id="leaderList" class="hidden space-y-3"></div>
+
+    <!-- Friends list button — shown below friends leaderboard -->
+    <div id="friendsListBtn" class="hidden mt-4 fade-up">
+      <a href="friends.html" class="friends-list-btn">
+        <span class="text-xl">👫</span>
+        <span>Friends List — Add or Edit Friends</span>
+      </a>
+    </div>
+
+    <!-- Empty states -->
+    <div id="emptyGlobal" class="hidden text-center py-10 fade-up">
+      <div class="text-5xl mb-3">📭</div>
+      <p class="text-gray-400 font-semibold text-sm">No data yet. Start studying to appear here!</p>
+    </div>
+
+    <div id="emptyFriends" class="hidden text-center py-10 fade-up">
+      <div class="text-5xl mb-3">👫</div>
+      <h3 class="font-black text-gray-600 mb-2">No friends yet!</h3>
+      <p class="text-gray-400 text-sm mb-4">Add friends to compare your scores.</p>
+      <a href="friends.html" class="friends-list-btn">
+        <span class="text-xl">➕</span>
+        <span>Add Friends</span>
+      </a>
+    </div>
+
+    <!-- Error state -->
+    <div id="errorState" class="hidden text-center py-10">
+      <div class="text-5xl mb-3">⚠️</div>
+      <p class="text-red-400 font-semibold text-sm" id="errorMsg">Failed to load.</p>
+      <p class="text-gray-400 text-xs mt-2">You may need to create a Firestore index. Check browser console for link.</p>
+      <button onclick="loadCurrentTab()" class="mt-4 bg-gray-100 text-gray-600 font-bold py-2 px-5 rounded-full text-sm">Retry</button>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <div class="max-w-2xl mx-auto flex">
+      <a href="home.html"        class="nav-item"><span class="nav-icon">🏠</span>Home</a>
+      <a href="progress.html"    class="nav-item"><span class="nav-icon">📊</span>Progress</a>
+      <a href="leaderboard.html" class="nav-item active"><span class="nav-icon">🏆</span>Ranking</a>
+      <a href="profile.html"     class="nav-item"><span class="nav-icon">👤</span>Profile</a>
+    </div>
+  </nav>
+
+  <script type="module">
+    import { db, auth } from "./js/firebase.js";
+    import { getLevel } from "./js/streak.js";
+    import { initTheme } from "./js/theme.js";
+    import { showSignInModal } from "./js/guest.js";
+    import { onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { collection, getDocs, orderBy, query, limit, doc, getDoc }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    initTheme();
+    window.showModal = showSignInModal;
+
+    // Re-render leaderboard when dark mode is toggled (colours change)
+    new MutationObserver(() => {
+      if (document.getElementById("leaderList")?.children.length > 0) {
+        loadCurrentTab();
+      }
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    const AVATAR_COLORS=["#16a34a","#2563eb","#d97706","#db2777","#7c3aed","#ea580c","#0d9488","#dc2626"];
+    const RANK_MEDALS=["🥇","🥈","🥉"];
+    let currentUser=null, activeTab="global";
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href="index.html"; return; }
+      currentUser=user;
+      if (user.isAnonymous) {
+        document.getElementById("loadingState").classList.add("hidden");
+        document.getElementById("guestNotice").classList.remove("hidden");
+        return;
+      }
+      await loadCurrentTab();
+    });
+
+    window.setTab = function(tab) {
+      activeTab=tab;
+      ["global","friends"].forEach(t=>{
+        document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle("active",t===tab);
+      });
+      hideAll();
+      document.getElementById("loadingState").classList.remove("hidden");
+      loadCurrentTab();
+    };
+
+    window.loadCurrentTab = function() {
+      activeTab==="global" ? loadGlobal() : loadFriends();
+    };
+
+    function hideAll() {
+      ["loadingState","leaderList","emptyGlobal","emptyFriends","errorState","myRankCard","friendsListBtn"]
+        .forEach(id=>document.getElementById(id).classList.add("hidden"));
+    }
+
+    async function loadGlobal() {
+      try {
+        const q    = query(collection(db,"users"),orderBy("xp","desc"),limit(50));
+        const snap = await getDocs(q);
+        // Normalise: add nickname/realName fields so renderList works consistently
+        const users = snap.docs
+          .map(d => ({
+            uid:         d.id,
+            displayName: d.data().displayName || `User`,
+            realName:    d.data().displayName || "",
+            nickname:    "",   // global tab never has personal nicknames
+            xp:          d.data().xp    || 0,
+            streak:      d.data().streak|| 0,
+            schoolLevel: d.data().schoolLevel || null,
+          }))
+          .filter(u => u.xp > 0);
+
+        document.getElementById("loadingState").classList.add("hidden");
+        if (!users.length) { document.getElementById("emptyGlobal").classList.remove("hidden"); return; }
+        const myIdx = users.findIndex(u => u.uid === currentUser.uid);
+        showMyRank(myIdx, users, currentUser);
+        renderList(users, myIdx);
+      } catch(err) {
+        document.getElementById("loadingState").classList.add("hidden");
+        document.getElementById("errorMsg").textContent = "Failed to load global ranking. " + (err.message||"");
+        document.getElementById("errorState").classList.remove("hidden");
+      }
+    }
+
+    async function loadFriends() {
+      try {
+        // Load MY friends sub-collection — contains nicknames I set
+        const friendsSnap=await getDocs(collection(db,"users",currentUser.uid,"friends"));
+        document.getElementById("loadingState").classList.add("hidden");
+
+        if (friendsSnap.empty) {
+          document.getElementById("emptyFriends").classList.remove("hidden"); return;
+        }
+
+        // friendsMap: uid → { displayName, nickname } from MY friends list
+        const friendsMap = {};
+        friendsSnap.docs.forEach(d => { friendsMap[d.id] = d.data(); });
+        const friendUids = Object.keys(friendsMap);
+
+        // Fetch fresh profiles for XP/streak
+        const profiles=await Promise.allSettled(friendUids.map(uid=>getDoc(doc(db,"users",uid))));
+
+        let users=profiles
+          .filter(r=>r.status==="fulfilled"&&r.value.exists())
+          .map(r=>{
+            const uid=r.value.id;
+            const p=r.value.data();
+            const friendEntry=friendsMap[uid]||{};
+            return {
+              uid,
+              // Use MY nickname for this friend if set, else their real displayName
+              displayName: friendEntry.nickname || p.displayName || `User`,
+              realName:    p.displayName||"",
+              nickname:    friendEntry.nickname||"",
+              xp:          p.xp||0,
+              streak:      p.streak||0,
+              schoolLevel: p.schoolLevel||null,
+            };
+          });
+
+        // Add self (no nickname for yourself)
+        const selfSnap=await getDoc(doc(db,"users",currentUser.uid));
+        if (selfSnap.exists()) {
+          const s=selfSnap.data();
+          users.push({uid:currentUser.uid, displayName:currentUser.displayName||"Me", realName:"", nickname:"", xp:s.xp||0, streak:s.streak||0});
+        }
+
+        users=users.sort((a,b)=>(b.xp||0)-(a.xp||0));
+
+        if (!users.length) { document.getElementById("emptyFriends").classList.remove("hidden"); return; }
+
+        const myIdx=users.findIndex(u=>u.uid===currentUser.uid);
+        showMyRank(myIdx,users,currentUser);
+        renderList(users,myIdx);
+
+        // Show Friends List button below
+        document.getElementById("friendsListBtn").classList.remove("hidden");
+
+      } catch(err) {
+        document.getElementById("loadingState").classList.add("hidden");
+        document.getElementById("errorMsg").textContent="Failed to load friends ranking.";
+        document.getElementById("errorState").classList.remove("hidden");
+      }
+    }
+
+    function showMyRank(myIdx,users,user) {
+      if (myIdx===-1) return;
+      const me=users[myIdx];
+      const myLv=getLevel(me.xp||0);
+      document.getElementById("myRank").textContent=`#${myIdx+1}`;
+      document.getElementById("myName").textContent=user.displayName||user.email||"You";
+      document.getElementById("myXPLabel").textContent=`${me.xp||0} XP`;
+      document.getElementById("myLevelLabel").textContent=myLv.title;
+      document.getElementById("myRankCard").classList.remove("hidden");
+    }
+
+    function renderList(users,myIdx) {
+      const maxXP=users[0]?.xp||1;
+      const list=document.getElementById("leaderList");
+      list.classList.remove("hidden"); list.innerHTML="";
+
+      // Detect dark mode for inline colour decisions
+      const isDark = document.documentElement.classList.contains("dark");
+
+      users.forEach((user,i)=>{
+        const isMe      = user.uid===currentUser.uid;
+        const rankClass = i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"rank-other";
+        const medal     = i<3?RANK_MEDALS[i]:`<span style="font-weight:900;font-size:.875rem;color:#6b7280">${i+1}</span>`;
+        const lv        = getLevel(user.xp||0);
+        const xpPct     = Math.round(((user.xp||0)/maxXP)*100);
+        const color     = AVATAR_COLORS[i%AVATAR_COLORS.length];
+        const initial   = (user.displayName||"?").charAt(0).toUpperCase();
+        const delay     = (i*0.04).toFixed(2);
+
+        // ── Colour logic ──────────────────────────────────────
+        // For rank-1/2/3 in dark mode: cards are darkened with filter,
+        // so we need LIGHT text. For rank-other/rank-me in dark mode: dark bg, LIGHT text.
+        // In light mode: all cards have light backgrounds → DARK text.
+        let nameColour, subColour;
+        if (!isDark) {
+          // Light mode — all cards have light/pastel bg → dark text
+          nameColour = "#1e293b";
+          subColour  = "#374151";
+        } else if (i < 3) {
+          // Dark mode rank 1/2/3 — filtered darker, use light text
+          nameColour = "#f1f5f9";
+          subColour  = "#e2e8f0";
+        } else {
+          // Dark mode rank-other / rank-me — dark card bg (#1e293b) → light text
+          nameColour = "#f1f5f9";
+          subColour  = "#94a3b8";
+        }
+
+        // Name: show nickname as primary, real name in parentheses if different
+        const displayLabel = (user.nickname && user.realName && user.nickname !== user.realName)
+          ? `${user.nickname} <span style="font-weight:600;font-size:.75rem;color:${subColour};opacity:.75">(${user.realName})</span>`
+          : user.displayName||`User ${i+1}`;
+
+        const div=document.createElement("div");
+        div.className=`border-2 ${rankClass} ${isMe?"rank-me":""} rounded-2xl px-4 py-3 flex items-center gap-3 fade-up`;
+        div.style.animationDelay=delay+"s";
+        div.innerHTML=`
+          <div class="w-8 text-center text-xl">${medal}</div>
+          <div class="avatar-sm" style="background:${color}">${initial}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <p class="font-black text-sm truncate" style="color:${nameColour}">
+                ${displayLabel}${isMe?` <span style="color:#6366f1">(You)</span>`:""}
+              </p>
+              ${i===0?`<span style="background:#fef08a;color:#713f12;font-size:.75rem;font-weight:900;padding:0 .5rem;border-radius:99px">👑</span>`:""}
+            </div>
+            <div class="flex items-center gap-2 mt-1">
+              <div class="bar-track"><div class="bar-fill" style="width:${xpPct}%"></div></div>
+              <span class="text-xs font-bold whitespace-nowrap" style="color:${subColour}">${user.xp||0} XP</span>
+            </div>
+            <p class="text-xs font-semibold mt-0.5" style="color:${subColour}">${lv.title} · 🔥 ${user.streak||0}</p>
+          </div>`;
+        list.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
